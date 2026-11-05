@@ -1,144 +1,163 @@
-# Rally CAN Gauge firmware
+# MTGDraftFish
 
-Firmware for the E30 rally car gauge cluster: Teensy 4.0 driving three
-ER-TFT2.79-1 displays (NV3007 controller) over SPI, fed by CAN data from the
-RUSEFI ECU and the JK BMS. The full hardware/software plan lives in
-`../Rally CAN Gauge Project Plan.md`.
+Expected value, spread and break-even odds for the Magic: The Gathering booster boxes on your draft list.
 
-## Opening the project
+Opening a booster box is a lottery with published odds. MTGJSON records which print sheets fill each
+slot of a pack and how heavily each card sits on its sheet. Price every card, weight it by those odds,
+and a box's value becomes a distribution instead of a guess. MTGDraftFish keeps a target list of boxes,
+prices every card they can deal at today's TCGplayer prices, and shows for each box:
 
-This is a standard PlatformIO project: in VS Code with the PlatformIO
-extension, use "Open Folder" on this `firmware/` directory. Or from a
-terminal:
+- the **expected recoup value** and its **standard deviation** (exact under the sheet model),
+- the **distribution** of box values from a seeded Monte Carlo simulation, as 20 equally likely
+  outcomes and as a histogram,
+- the **chance of breaking even** at a purchase price you type in,
+- where the value sits (by rarity and finish) and which cards carry it.
 
-```
-pio run                        # build the main gauge firmware
-pio run -t upload              # flash the Teensy
-pio device monitor             # serial output (115200)
-pio run -e display_test        # build the display bring-up test instead
-pio run -e display_test -t upload
-```
+Boxes that deal a box-topper pack (Ultimate Masters, Aetherdrift, …) include it.
 
-## Architecture
+The visual identity is the [Halftone](https://claude.ai/artifact/YQSMapRzAbrvnJ7AoivnMQ) design system:
+paper, ink and one signal blue, with every figure carrying its own title, source, table view and CSV.
 
-```
-CAN interrupt -> ring buffer -> canBusPoll() ---+
-ADC pins  ------> inputsPoll()  (20 ms tick) ---+--> g_data (raw + derived)
-RTC + die temp -/                                      |
-                                                 alarmsUpdate()
-                                                       v
-                                                g_data.alarms ---> audio (1 Hz),
-                                                (verdicts)     LED tach + screens
-                                                               (50 Hz)
+## Quick start
+
+```bash
+npm install
+npm run refresh      # fetch MTGJSON + TCGCSV for the sets in targets.json → public/data/
+npm run dev          # open the site
+npm run ev -- MH2    # the same numbers in the terminal
+npm run buylist:todo # lookup list of the cards that carry the EV → buylist/todo.csv
+npm test             # engine unit tests
 ```
 
-Two layers by design: input modules establish *what is* (temperatures,
-voltages, link freshness) in the global `VehicleData g_data` struct; the
-alarm state machine judges *what matters* and publishes verdicts to
-`g_data.alarms`. Consumers (audio, screens, LED tach) read only verdicts -
-no display or audio code ever touches a threshold. The screens repeat the
-same split one level down: `gauge_render.cpp` decides what a frame *shows*
-(pure g_data -> pixels), `screens.cpp` decides how it *reaches the glass*
-(framebuffers, diffs, DMA). The superloop in `src/main.cpp` is a cooperative
-scheduler: CAN drains every pass, inputs + alarms + LED strip + screens run
-on a 20 ms tick (which also feeds the hardware watchdog), housekeeping runs
-at 1 Hz. A hung firmware stops feeding the watchdog and the chip hard-resets
-within ~1 s.
+Node 20 or newer. The refresh keeps a `.cache/` of downloads so repeated local runs are instant and
+polite to the sources. A snapshot of `public/data/` is committed, so the site works before the first
+refresh; the published site refreshes itself daily (see Deployment).
+
+## The target list
+
+`targets.json` is the watch list and the source of truth for which sets get data:
+
+```json
+{
+  "defaults": { "basis": "mid", "tiers": [{ "min": 1, "pct": 0.7 }], "boxes": 20000 },
+  "targets": [
+    { "set": "UMA", "box": "draft", "note": "Ultimate Masters, 2018. 24 draft boosters plus one box-topper pack." },
+    { "set": "MH2", "box": "set", "price": 450 }
+  ]
+}
+```
+
+| field   | meaning |
+|---------|---------|
+| `set`   | MTGJSON set code |
+| `box`   | optional: `draft`, `play`, `set`, `collector`, `default`, or a sealed-product uuid. Defaults to the most draft-like box. |
+| `price` | optional purchase price to test; defaults to the box's own TCGplayer market price. Overridable on the page. |
+| `note`  | optional, shown on the box page |
+
+The **Add a set** search on the target list covers every set with a draftable booster box in MTGJSON
+(182 at the time of writing) and hands you the line to paste. Run `npm run refresh` afterwards; a
+full run also prunes set files that left the list. Purchase prices typed on the page and the
+valuation rules are remembered in the browser.
+
+## Valuation rules
+
+A card's recoup value is its basis price passed through the rules you set on the page:
+
+- **Price basis**: TCGplayer **Low**, **Mid** (default) or **Market**, or a **buylist** cash price.
+- **Recoup tiers**: cards priced at or above a threshold count at a percentage of the basis price;
+  cards under every threshold count as $0. Default: 70% of Mid for cards at $1 or more. Add tiers for
+  "80% over $20" style schedules.
+
+Foil sheets use the foil price. A finish with no price falls back to the other finish; a missing
+figure falls back along Market → Mid → Low. "Sticker value" (every card at 100%, no floor) is shown
+next to the recoup EV for context.
+
+## Data sources and how they are used
+
+| source | what | how |
+|--------|------|-----|
+| [MTGJSON](https://mtgjson.com/) | set files (booster configurations, print sheets, sealed products), `SetList.json`, `AllPricesToday.json.gz` | one request per set and per source set (e.g. Time Spiral draws its timeshifted sheet from TSB), cached 20 hours |
+| [TCGCSV](https://tcgcsv.com/) | daily export of TCGplayer Low / Mid / Market per product and finish, including sealed boxes | `last-updated.txt` is read first and keys the cache, so each day's files are fetched once; custom `User-Agent`; 120 ms between requests; never requested from the browser. This follows TCGCSV's [usage guidelines](https://tcgcsv.com/docs#usage-guidelines). |
+| Card Kingdom buylist (via MTGJSON) | cash buy prices per finish | the automatic `buylist` price basis; public data, merged into the committed set files |
+| `buylist/*.csv` | buylist quotes you (or a supervised agent) read off a store | compiled into `public/data/local/buylist.json`; both gitignored, never committed or published; overlay the Card Kingdom quote card by card |
+
+### Buylist quotes from GameNerdz
+
+GameNerdz's buylist is readable in a browser without an account, but it has no documented API or
+export, and the store's terms of use prohibit "any collection and use of any product listings,
+descriptions, or prices" and "any use of data mining, robots, or similar data gathering and
+extraction tools". Nothing in this repository fetches it, and the deployed site only ever carries
+the Card Kingdom quotes.
+
+For personal use on your own machine, the intended workflow is a person, or an AI agent with a
+browser tool that the person is supervising, reading the prices of the few dozen cards that
+actually carry a box's expected value and typing them into a CSV:
+
+```bash
+npm run refresh                     # today's prices
+npm run buylist:todo -- --top 30    # buylist/todo.csv: the cards to look up, with coverage per box
+# look up prices on buylist.gamenerdz.com, fill price/source/date, save as buylist/gamenerdz.csv
+npm run refresh -- --no-catalog     # compiles public/data/local/buylist.json (gitignored)
+npm run ev -- MH2 --basis buylist   # or the site with price basis "Buylist"
+```
+
+`docs/gamenerdz-buylist-workflow.md` is the step-by-step procedure for an agent, with the ground
+rules that keep it as close as an agent can get to a person reading the site: one tab, one search at
+a time, human pace, only the todo list, never the internal endpoints, never logged in, data stays
+local, stop on any block. Whether that sits within the letter of the terms is the owner's call; it
+is personal, supervised and tiny in volume, which is what the ground rules protect. `CLAUDE.md` is
+the project guide an agent reads first.
+
+The top-cards table on a box page shows a *Quote* column (source and date) when the basis is
+Buylist, and the box notes say how many quotes are hand-gathered; buylists move daily, so the date
+is the staleness signal.
+
+## Method
+
+For a sheet, one draw has mean μ = Σ pᵢvᵢ and variance σ² = Σ pᵢvᵢ² − μ², where pᵢ is a card's share
+of the sheet weight and vᵢ its recoup value. A pack layout with n draws from each sheet has mean Σ nμ
+and variance Σ nσ²; `fixed` sheets (Jumpstart-style) are dealt whole. A set's packs come in several
+layouts with weights, so a pack is a mixture: E = Σ wₖμₖ and Var = Σ wₖ(σₖ² + μₖ²) − E². A box of P
+packs has mean P·E and standard deviation √(P·Var); a box-topper pack is one more pack model added to
+both. These are exact under the model.
+
+The distribution of a box is right-skewed (a few boxes carry a chase foil), so break-even odds come
+from simulation: each pack picks a layout by weight, each slot draws from its sheet by weight (without
+replacement inside a slot unless MTGJSON allows duplicates), 20,000 boxes by default, with a fixed
+seed so the same inputs reproduce the same picture. The chance is reported as a count in 20 so it
+reads as a frequency, with the exact percentage beside it. A normal approximation is printed as a
+cross-check; it understates the skew.
+
+Not modelled: colour balancing of commons, print-run collation (real boxes are a little less spread
+than 36 independent packs), inserts outside MTGJSON's booster data, condition, fees, and the time it
+takes to sell a few hundred cards. TCGplayer Low can reflect a single damaged copy; Mid and Market
+are steadier, and sealed box prices use Market where it exists.
+
+`tests/engine.test.ts` checks the exact moments against a brute-force enumeration of a small pack,
+the simulation against the exact mean and standard deviation, the recoup tiers and the fallbacks.
+
+## Deployment
+
+`.github/workflows/refresh-and-deploy.yml` runs daily at 21:37 UTC (after TCGCSV publishes), on
+every push to `main`, and on demand: tests, refresh, build, deploy to GitHub Pages. Enable it once
+under **Settings → Pages → Source: GitHub Actions**. If a source is unreachable the committed data
+snapshot deploys instead. The site is static: all EV maths and simulation run in the browser
+(simulation in a Web Worker), reading the JSON the refresh wrote.
 
 ## Layout
 
-- `src/main.cpp` - the superloop (scheduler + derived values + 1 Hz debug print).
-- `src/config.h` - every pin, constant, threshold and tunable in one place.
-- `src/vehicle_data.h/.cpp` - the central data model (`g_data`), including
-  the alarm catalog enum (ordered by the plan's priorities).
-- `src/alarms.h/.cpp` - the warning/alarm state machine: one table row per
-  alarm (name, color, priority, persistence, audio clip, condition).
-- `src/audio.h/.cpp` - voice-callout arbitration (priority, repeat intervals,
-  no talking over itself) plus the DFPlayer Mini driver (Makuna/DFMiniMp3 on
-  Serial7, pins 28/29, watchdog-safe NoAck mode - design notes at the top
-  of the .cpp).
-  SD card layout is documented on the clip enum in `audio.h`; the rotary
-  dial's silent position (`MODE_SILENT`) mutes all callouts.
-- `src/backlight.h/.cpp` - display backlight dimming: 20 kHz PWM into three
-  low-side N-FET switches (pins 2/3/22 - all on FlexPWM4 so the three
-  windows can be locked a third of a period apart: the 5V rail sees one
-  100 mA step at a time instead of 300 mA), brightness from the rotary mode
-  with per-screen binning trim (`BL_TRIM`) and a 250 ms fade between
-  levels. Hardware, frequency and phase rationale in `config.h`; the
-  FlexPWM register mechanics and the bench check at the top of the .cpp.
-- `src/watchdog.h/.cpp` - minimal register driver for the i.MX RT's WDOG1.
-- `src/can_bus.h/.cpp` - CAN3 + both decoders: Megasquirt ECU broadcast
-  (big-endian, 50 Hz) and JK BMS Deye protocol (little-endian, 1 Hz), plus
-  the 1 Hz PCS heartbeat the BMS expects from an "inverter".
-- `src/inputs.h/.cpp` - fuel sender (ratiometric 150R divider, including
-  the two-stage slosh filter: median window + slow EMA), rotary switch
-  (2.2k pull-up into an 11 x 220R ladder, decoded in ohms, with open-wiper
-  detection feeding the DIALFAIL alarm and a fail-safe fallback to Bright),
-  12V switches, chip temp, RTC. Both divider circuits are drawn in `config.h`.
-- `src/fuel_calc.h/.cpp` - calculated fuel: integrates the ECU's injector
-  pulse width (dead-time corrected) into a gallons-remaining estimate, and
-  runs the rotary FUEL FILL gesture (hold 30 s = +5 gal, 60 s = full tank).
-  Physics and design rationale at the top of the .cpp; constants in
-  `config.h`. Seeds from the FRAM fuel record at boot (sender fallback).
-- `src/fram.h/.cpp` - FM24V10 F-RAM driver: non-blocking I2C write queue
-  (interrupt-driven via teensy4_i2c - the superloop never waits on the
-  bus), blocking reads for boot/console, shared CRC-16.
-- `src/fram_log.h/.cpp` - what the FRAM stores: the persistent fuel record
-  (16 rotating CRC'd slots - kill-switch-proof) and the black-box flight
-  recorder (~2 h circular log of every gauge field + active alarms), plus
-  the serial console (`h` in the monitor: CSV dump, fuel slots, format).
-  **See `docs/FRAM_BLACKBOX.md`** for the memory map, record formats,
-  wiring, and how to read the log out.
-- `src/gauge_render.h/.cpp` - what the three panels show: the bench-tested
-  prototype layouts (big value left, secondary stack right), the semantic
-  color Theme (night mode = every blue element turns amber, resolved in one
-  place), per-readout coloring from alarm verdicts, the warning banner with
-  its 1 Hz critical flash, and the MODE_DEBUG dense pages. Stateless: every
-  frame is composed from scratch from g_data ("compose then show", like the
-  LED strip). Design story at the top of the .cpp.
-- `src/screens.h/.cpp` - how frames reach the glass: three ILI9341_T4
-  drivers (one per SPI bus), one shared 121 KB draw buffer + three
-  per-display internal buffers in OCRAM, differential DMA updates, the
-  busy-skip rule that keeps the superloop from ever blocking on a transfer,
-  and displays-off handling. Memory map + pipeline at the top of the .cpp.
-- `src/fonts/` - the custom Iosevka faces (tgx font exports, PROGMEM):
-  Regular 30 px for labels, Heavy 30 px for the banner, Extended 55/114 px
-  for values. Monospaced so a changing digit dirties only its own cell
-  (small diffs). Regenerate with vindar's tgx font tool from the Iosevka
-  TTFs; the PC prototype in `../Graphics/` is the layout source of truth.
-- `src/examples/display_bringup.cpp` - display test pattern, built by the
-  `display_test` environment (wiring documented at the top of the file).
-- `docs/FRAM_BLACKBOX.md` - the FM24V10 wiring, memory map, record
-  formats, black-box gating rules, and the serial console commands.
-- `docs/ECU_CAN_SETUP.md` - **the TunerStudio broadcast configuration the
-  firmware expects.** Keep it in sync with `config.h`/`can_bus.cpp`.
-- `docs/BMS_CAN_SETUP.md` - the JK BMS protocol selection (Deye/001), the
-  frames decoded, and BMS bring-up checks.
-- `lib/ILI9341_T4/` - vindar's ILI9341_T4 DMA display library, modified for
-  the NV3007 controller. **Read `lib/ILI9341_T4/PORTING_NV3007.md`** for a
-  walkthrough of every change and why it was needed. The folder is a git
-  clone, so `git diff` inside it shows the exact modifications.
-
-## Display driving in one paragraph
-
-Each display gets its own SPI bus (SPI0/1/2 on the Teensy). We draw into a
-428x142 RGB565 framebuffer in RAM, then `tft.update(fb)` hands it to the
-library, which diffs it against what is already on screen and streams only
-the changed pixels out via DMA - the CPU is free almost the entire time.
-VSync is not available (the display has no MISO line to poll the scanline),
-but the TE pin is broken out on the module and reserved in the pinout for a
-possible future tear-free sync mod.
-
-## Memory budget (as built)
-
-Each display keeps a 121 KB internal framebuffer inside the 512 KB
-OCRAM/DMAMEM region (3 x 121 = 363 KB), plus ONE shared 121 KB draw
-framebuffer = 486 KB of the 512 KB used; the ~25 KB remainder is heap
-headroom (nothing in this firmware mallocs). The 20 ms tick draws each
-screen into the shared buffer sequentially: draw 1 -> update(1) -> draw 2 ->
-update(2) -> draw 3 -> update(3). The DMA transfers overlap the following
-draws because update() copies the changed pixels into the per-display
-internal buffer before returning. The six 8 KB diff buffers and all other
-variables live in the separate 512 KB DTCM bank. Fonts (~145 KB) stay in
-flash. Watch the 1 Hz `[SCRN]` debug line: worst-case draw time and the
-skipped-frame counter are the two health numbers for this pipeline.
+```
+targets.json            the watch list
+scripts/refresh.ts      data pipeline → public/data/{index,catalog}.json, public/data/sets/*.json
+scripts/ev.ts           terminal summary for one box
+scripts/buylist-todo.ts lookup list of the cards that carry each box's EV
+buylist/                hand-gathered quotes (CSV, gitignored) and the format guide
+docs/                   the supervised GameNerdz lookup procedure for an agent
+CLAUDE.md, AGENTS.md    project guide for AI agents
+src/engine/             pricing rules, pack model, exact moments, simulation, statistics (shared)
+src/pipeline/           MTGJSON, TCGCSV and buylist loaders, set builder, disk cache
+src/app/                the site: state, data loading, simulation worker, views
+public/data/local/      compiled hand-gathered quotes (gitignored)
+public/halftone/        the Halftone bundle, tokens and fonts (fonts under the SIL Open Font License)
+tests/                  engine unit tests (vitest)
+```

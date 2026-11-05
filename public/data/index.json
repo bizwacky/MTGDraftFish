@@ -1,0 +1,514 @@
+{
+ "generatedAt": "2026-11-05T06:57:34.440Z",
+ "sources": {
+  "mtgjson": {
+   "version": "5.3.0+20261104",
+   "date": "2026-11-04"
+  },
+  "tcgcsv": {
+   "updated": "2026-11-04T20:06:16+0000"
+  },
+  "buylist": {
+   "provider": "Card Kingdom buylist via MTGJSON",
+   "date": "2026-11-04"
+  }
+ },
+ "defaults": {
+  "basis": "mid",
+  "tiers": [
+   {
+    "min": 1,
+    "pct": 0.7
+   }
+  ],
+  "boxes": 20000
+ },
+ "sets": [
+  {
+   "code": "ISD",
+   "name": "Innistrad",
+   "releaseDate": "2011-09-30",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "c53cf2d7-0d9d-514f-aaf8-2509d47e15d5",
+     "name": "Innistrad Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      630.99,
+      747.35,
+      582.7
+     ],
+     "tcgId": 47791,
+     "target": true,
+     "note": "Innistrad, 2011. 36 draft boosters."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 528
+  },
+  {
+   "code": "KTK",
+   "name": "Khans of Tarkir",
+   "releaseDate": "2014-09-26",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "ab297ade-8bf8-58a3-9d3e-fa32bd561317",
+     "name": "Khans of Tarkir Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      285,
+      317.48,
+      299.06
+     ],
+     "tcgId": 91650,
+     "target": true,
+     "note": "Khans of Tarkir, 2014. 36 draft boosters; fetch lands in the rare slot."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 538
+  },
+  {
+   "code": "UST",
+   "name": "Unstable",
+   "releaseDate": "2017-12-08",
+   "type": "funny",
+   "boxes": [
+    {
+     "uuid": "96821d46-eb3c-5302-a6a2-07322e5c17f7",
+     "name": "Unstable Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      180,
+      190,
+      191.2
+     ],
+     "tcgId": 149402,
+     "target": true,
+     "note": "Unstable, 2017. 36 boosters; silver-bordered set with full-art basic lands."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 536
+  },
+  {
+   "code": "DOM",
+   "name": "Dominaria",
+   "releaseDate": "2018-04-27",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "ad767a4a-7290-57e8-a20c-d8ab386ea450",
+     "name": "Dominaria Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      187.49,
+      230.99,
+      225.13
+     ],
+     "tcgId": 158423,
+     "target": true,
+     "note": "Dominaria, 2018. 36 draft boosters."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 538
+  },
+  {
+   "code": "UMA",
+   "name": "Ultimate Masters",
+   "releaseDate": "2018-12-07",
+   "type": "masters",
+   "boxes": [
+    {
+     "uuid": "a5f4e06b-5793-5052-bf0d-2b7b3e3c9e32",
+     "name": "Ultimate Masters Draft Booster Box",
+     "subtype": "draft",
+     "packs": 24,
+     "booster": "draft",
+     "extras": [
+      {
+       "booster": "box-topper",
+       "count": 1,
+       "name": "Ultimate Masters Box Topper Pack"
+      }
+     ],
+     "price": [
+      489,
+      586.5,
+      520.51
+     ],
+     "tcgId": 179444,
+     "target": true,
+     "note": "Ultimate Masters, 2018. 24 draft boosters plus one box-topper pack."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 548
+  },
+  {
+   "code": "MH1",
+   "name": "Modern Horizons",
+   "releaseDate": "2019-06-14",
+   "type": "draft_innovation",
+   "boxes": [
+    {
+     "uuid": "9ed117b6-1f95-55f7-9b3c-e747763ef214",
+     "name": "Modern Horizons Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      280,
+      305,
+      289.21
+     ],
+     "tcgId": 185894,
+     "target": true,
+     "note": "Modern Horizons, 2019. 36 draft boosters."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 508
+  },
+  {
+   "code": "STX",
+   "name": "Strixhaven: School of Mages",
+   "releaseDate": "2021-04-23",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "7d00e5b2-b43e-5255-ad28-e2655e46e3b4",
+     "name": "Strixhaven School of Mages Collector Booster Box",
+     "subtype": "collector",
+     "packs": 12,
+     "booster": "collector",
+     "price": [
+      597.51,
+      639,
+      623.58
+     ],
+     "tcgId": 233232,
+     "target": false
+    },
+    {
+     "uuid": "dc8ced71-44cd-5779-aa98-e287306af66e",
+     "name": "Strixhaven School of Mages Draft Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      177,
+      200,
+      186.42
+     ],
+     "tcgId": 233249,
+     "target": true,
+     "note": "Strixhaven: School of Mages, 2021. 36 draft boosters with a Mystical Archive slot."
+    },
+    {
+     "uuid": "626aab55-d747-5a68-9492-742641a39cea",
+     "name": "Strixhaven School of Mages Set Booster Box",
+     "subtype": "set",
+     "packs": 30,
+     "booster": "set",
+     "price": [
+      182.98,
+      222.5,
+      194.59
+     ],
+     "tcgId": 233229,
+     "target": false
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 1319
+  },
+  {
+   "code": "MH2",
+   "name": "Modern Horizons 2",
+   "releaseDate": "2021-06-18",
+   "type": "draft_innovation",
+   "boxes": [
+    {
+     "uuid": "fa4d910e-8e90-52ab-9e20-b84e3e0dbb39",
+     "name": "Modern Horizons 2 Collector Booster Box",
+     "subtype": "collector",
+     "packs": 12,
+     "booster": "collector",
+     "price": [
+      649.48,
+      680,
+      648.2
+     ],
+     "tcgId": 236348,
+     "target": false
+    },
+    {
+     "uuid": "f61277fa-4be0-5efb-b747-256c25586715",
+     "name": "Modern Horizons 2 Draft Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      368.99,
+      400,
+      356.86
+     ],
+     "tcgId": 236354,
+     "target": true,
+     "note": "Modern Horizons 2, 2021. 36 draft boosters."
+    },
+    {
+     "uuid": "bc01b7fa-b49a-5357-8be9-1d0e115dab5f",
+     "name": "Modern Horizons 2 Set Booster Box",
+     "subtype": "set",
+     "packs": 30,
+     "booster": "set",
+     "price": [
+      469.99,
+      495.75,
+      480.7
+     ],
+     "tcgId": 236353,
+     "target": false
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 1320
+  },
+  {
+   "code": "2X2",
+   "name": "Double Masters 2022",
+   "releaseDate": "2022-07-08",
+   "type": "masters",
+   "boxes": [
+    {
+     "uuid": "c36799de-cab1-5645-8e98-c5898a63b61c",
+     "name": "Double Masters 2022 Collector Booster Box",
+     "subtype": "collector",
+     "packs": 4,
+     "booster": "collector",
+     "price": [
+      474.97,
+      500,
+      473.42
+     ],
+     "tcgId": 271509,
+     "target": false
+    },
+    {
+     "uuid": "46d9414b-9289-5b63-9a62-e76620429e70",
+     "name": "Double Masters 2022 Draft Booster Box",
+     "subtype": "draft",
+     "packs": 24,
+     "booster": "draft",
+     "price": [
+      470,
+      549.97,
+      481.96
+     ],
+     "tcgId": 271506,
+     "target": true,
+     "note": "Double Masters 2022. 24 draft boosters with two rare slots."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 988
+  },
+  {
+   "code": "MOM",
+   "name": "March of the Machine",
+   "releaseDate": "2023-04-21",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "641a48be-9bd5-5ee8-aa50-90911e1af051",
+     "name": "March of the Machine Collector Booster Box",
+     "subtype": "collector",
+     "packs": 12,
+     "booster": "collector",
+     "price": [
+      881.48,
+      930.98,
+      942.79
+     ],
+     "tcgId": 475584,
+     "target": false
+    },
+    {
+     "uuid": "c774c522-693e-56c2-8295-5e24f69c05c8",
+     "name": "March of the Machine Draft Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      172.28,
+      199.85,
+      179.1
+     ],
+     "tcgId": 475575,
+     "target": true,
+     "note": "March of the Machine, 2023. 36 draft boosters with a Multiverse Legends slot."
+    },
+    {
+     "uuid": "707cde52-c660-5cfb-9b3a-84909473ca67",
+     "name": "March of the Machine Set Booster Box",
+     "subtype": "set",
+     "packs": 30,
+     "booster": "set",
+     "price": [
+      234.94,
+      283.92,
+      272.68
+     ],
+     "tcgId": 475579,
+     "target": false
+    }
+   ],
+   "unpricedCards": 30,
+   "sheetCards": 1502
+  },
+  {
+   "code": "FDN",
+   "name": "Foundations",
+   "releaseDate": "2024-11-15",
+   "type": "core",
+   "boxes": [
+    {
+     "uuid": "8ebff39c-e06c-5b9e-8bd3-c092e219573c",
+     "name": "Foundations Collector Booster Box",
+     "subtype": "collector",
+     "packs": 12,
+     "booster": "collector",
+     "price": [
+      865,
+      999.95,
+      900.86
+     ],
+     "tcgId": 562122,
+     "target": false
+    },
+    {
+     "uuid": "1c043fb6-9a92-5031-9316-4f5bc86667bd",
+     "name": "Foundations Play Booster Box",
+     "subtype": "play",
+     "packs": 36,
+     "booster": "play",
+     "price": [
+      164.98,
+      184.99,
+      173.21
+     ],
+     "tcgId": 562118,
+     "target": true,
+     "note": "Foundations, 2024. 36 play boosters."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 914
+  },
+  {
+   "code": "DFT",
+   "name": "Aetherdrift",
+   "releaseDate": "2025-02-14",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "a18aa707-9dae-58ca-ae62-89f116b1e019",
+     "name": "Aetherdrift Collector Booster Box",
+     "subtype": "collector",
+     "packs": 12,
+     "booster": "collector",
+     "extras": [
+      {
+       "booster": "box-topper",
+       "count": 1,
+       "name": "Aetherdrift Box Topper Pack"
+      }
+     ],
+     "price": [
+      290,
+      372.19,
+      314.87
+     ],
+     "tcgId": 604253,
+     "target": false
+    },
+    {
+     "uuid": "2b3f3d69-5581-50f6-a6f9-ae59c48dcf0b",
+     "name": "Aetherdrift Play Booster Box",
+     "subtype": "play",
+     "packs": 30,
+     "booster": "play",
+     "extras": [
+      {
+       "booster": "box-topper",
+       "count": 1,
+       "name": "Aetherdrift Box Topper Pack"
+      }
+     ],
+     "price": [
+      92.42,
+      135,
+      103.46
+     ],
+     "tcgId": 604250,
+     "target": true,
+     "note": "Aetherdrift, 2025. 30 play boosters plus one box-topper pack."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 992
+  },
+  {
+   "code": "FIN",
+   "name": "Final Fantasy",
+   "releaseDate": "2025-06-13",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "9fadb773-7459-5d5f-a0f2-85fcc8cf889d",
+     "name": "Final Fantasy Collector Booster Box",
+     "subtype": "collector",
+     "packs": 12,
+     "booster": "collector",
+     "price": [
+      1615,
+      2214,
+      1620.82
+     ],
+     "tcgId": 618893,
+     "target": false
+    },
+    {
+     "uuid": "d3bfce36-4bec-5357-8193-df371de783af",
+     "name": "Final Fantasy Play Booster Box",
+     "subtype": "play",
+     "packs": 30,
+     "booster": "play",
+     "price": [
+      257,
+      290,
+      256.94
+     ],
+     "tcgId": 618890,
+     "target": true,
+     "note": "Final Fantasy, 2025. 30 play boosters."
+    }
+   ],
+   "unpricedCards": 2,
+   "sheetCards": 1279
+  }
+ ]
+}
