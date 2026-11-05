@@ -39,9 +39,11 @@ and asking the owner to read the prices.
    `--out <file>`. The script refuses to overwrite a todo file that already has prices filled in.
    Read the printed coverage line: e.g. "MH2 draft: top 30 cards carry 71% of recoup EV".
 3. **Open the buylist.** Go to `https://buylist.gamenerdz.com/retailer/buylist` and choose
-   *Magic: The Gathering*. No account is needed. The header has a Cash / Credit toggle: make sure
-   **Cash** is selected. Credit prices include a trade-in bonus and are not comparable with the
-   Card Kingdom cash quotes.
+   *Magic: The Gathering*. No account is needed. The page shows both Cash and Credit totals and
+   advertises a trade-in bonus for credit; before recording anything, work out which the displayed
+   "Buy Price" refers to (open one card's detail or the cart if the list is ambiguous) and record
+   the **cash** figure. Credit prices are not comparable with the Card Kingdom cash quotes. Note
+   in `notes` if only a credit price was visible.
 4. **Look up each row.** Type the card name in the search box. Results read like
    `Foil Woodland Cemetery (PRE-248S) - Dominaria Promos · Near Mint · Buy Price: $2.66`.
    Match three things before you take a number:
