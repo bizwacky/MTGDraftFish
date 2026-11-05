@@ -1,14 +1,13 @@
 /// <reference lib="webworker" />
-import { buildPackModel } from '../engine/model';
+import { buildBoxModel } from '../engine/model';
 import { simulateBoxes } from '../engine/simulate';
-import type { RulesSpec, SetData } from '../engine/types';
+import type { BoxProduct, RulesSpec, SetData } from '../engine/types';
 
 export interface SimRequest {
   id: number;
   set?: SetData;
   setCode: string;
-  boosterKey: string;
-  packs: number;
+  box: BoxProduct;
   rules: RulesSpec;
   boxes: number;
   seed: number;
@@ -27,8 +26,8 @@ self.onmessage = (ev: MessageEvent<SimRequest>) => {
     if (req.set) sets.set(req.setCode, req.set);
     const set = sets.get(req.setCode);
     if (!set) throw new Error(`Worker has no data for ${req.setCode}`);
-    const model = buildPackModel(set, req.boosterKey, req.rules);
-    const sorted = simulateBoxes(model, req.packs, { boxes: req.boxes, seed: req.seed });
+    const model = buildBoxModel(set, req.box, req.rules);
+    const sorted = simulateBoxes(model, { boxes: req.boxes, seed: req.seed });
     const res: SimResponse = { id: req.id, sorted };
     (self as unknown as Worker).postMessage(res, [sorted.buffer]);
   } catch (e) {

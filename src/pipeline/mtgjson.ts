@@ -80,15 +80,23 @@ export async function loadPricesToday(): Promise<{ meta: RawMeta; data: RawPrice
 
 export interface EligibleBox {
   product: RawSealedProduct;
+  /** Main packs per box */
   packs: number;
   boosterKey: string;
   packSet: string;
+  /** Extra packs dealt with the box (box toppers) */
+  extras: { boosterKey: string; count: number; name: string }[];
+  /** Sealed contents that could not be resolved to a booster configuration (ignored, reported) */
+  unresolved: string[];
 }
 
 /** Box subtypes the calculator treats as draftable sealed product. */
 export const ELIGIBLE_SUBTYPES = new Set(['draft', 'play', 'set', 'collector', 'default', 'premium']);
 
-/** Booster boxes whose packs map to a booster configuration key: `box → N × pack → pack.contents.pack[0].code`. */
+/**
+ * Booster boxes whose packs map to booster configuration keys: `box → N × pack → pack.contents.pack[0].code`.
+ * The largest pack count is the main pack; other resolvable packs (a box-topper pack) become extras.
+ */
 export function eligibleBoxes(sealed: RawSealedProduct[] | undefined, setCode: string): EligibleBox[] {
   if (!sealed) return [];
   const packs = new Map(sealed.filter((p) => p.category === 'booster_pack').map((p) => [p.uuid, p] as const));
@@ -97,12 +105,19 @@ export function eligibleBoxes(sealed: RawSealedProduct[] | undefined, setCode: s
     if (box.category !== 'booster_box') continue;
     if (!ELIGIBLE_SUBTYPES.has((box.subtype ?? 'default').toLowerCase())) continue;
     const inner = box.contents?.sealed;
-    if (!inner || inner.length !== 1) continue;
-    const pack = packs.get(inner[0].uuid);
-    const spec = pack?.contents?.pack?.[0];
-    if (!spec) continue;
-    if (spec.set.toLowerCase() !== setCode.toLowerCase()) continue;
-    out.push({ product: box, packs: inner[0].count, boosterKey: spec.code, packSet: spec.set.toUpperCase() });
+    if (!inner?.length) continue;
+    const resolved: { count: number; code: string; name: string }[] = [];
+    const unresolved: string[] = [];
+    for (const item of inner) {
+      const pack = packs.get(item.uuid);
+      const spec = pack?.contents?.pack?.[0];
+      if (spec && spec.set.toLowerCase() === setCode.toLowerCase()) resolved.push({ count: item.count, code: spec.code, name: item.name });
+      else unresolved.push(`${item.count}× ${item.name}`);
+    }
+    if (!resolved.length) continue;
+    resolved.sort((a, b) => b.count - a.count);
+    const [main, ...rest] = resolved;
+    out.push({ product: box, packs: main.count, boosterKey: main.code, packSet: setCode.toUpperCase(), extras: rest.map((r) => ({ boosterKey: r.code, count: r.count, name: r.name })), unresolved });
   }
   return out;
 }

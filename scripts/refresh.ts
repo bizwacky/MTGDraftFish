@@ -7,12 +7,12 @@
  *   npm run refresh -- --sets INV,RAV
  *   npm run refresh -- --no-buylist # skip the 5.6 MB MTGJSON price file (no Card Kingdom buylist basis)
  */
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { resolveBox } from '../src/engine/boxes';
 import type { DataIndex, IndexSet, SetData, TargetsFile } from '../src/engine/types';
 import { DEFAULT_RULES } from '../src/engine/value';
-import { loadCustomBuylist } from '../src/pipeline/buylist';
+import { compileOverlay, loadCustomBuylist } from '../src/pipeline/buylist';
 import { buildCatalog, buildSet, type BuildContext } from '../src/pipeline/build';
 import { setForceRefresh } from '../src/pipeline/http';
 import { loadPricesToday, loadSetList } from '../src/pipeline/mtgjson';
@@ -38,7 +38,7 @@ async function main() {
   if (!targets.length) throw new Error('No targets to build. Check targets.json or --sets.');
 
   console.error(`Refreshing ${targets.length} target set(s)…`);
-  const ctx: BuildContext = { tcgcsvUpdated: '?', customBuylist: [], setCache: new Map(), priceCache: new Map() };
+  const ctx: BuildContext = { tcgcsvUpdated: '?', setCache: new Map(), priceCache: new Map() };
   // TCGCSV publishes once a day around 20:00 UTC; its stamp keys the price cache so each day's files are fetched once.
   ctx.tcgcsvUpdated = await loadLastUpdated();
   if (!/^\d{4}-\d{2}-\d{2}T/.test(ctx.tcgcsvUpdated)) throw new Error(`Unexpected TCGCSV last-updated response: ${ctx.tcgcsvUpdated.slice(0, 200)}`);
@@ -48,8 +48,6 @@ async function main() {
     ctx.prices = p.data;
     ctx.pricesMeta = p.meta;
   }
-  ctx.customBuylist = await loadCustomBuylist();
-  if (ctx.customBuylist.length) console.error(`  read   ${ctx.customBuylist.length} hand-entered buylist row(s) from buylist/*.csv`);
 
   const built: { set: SetData; spec: (typeof targets)[number] }[] = [];
   const codes = [...new Set(targets.map((t) => t.set.toUpperCase()))];
@@ -65,6 +63,17 @@ async function main() {
     }
   }
 
+  // A full run prunes set files that are no longer on the list, so public/data/ mirrors targets.json.
+  if (!only) {
+    for (const f of await readdir(setsDir)) {
+      const code = f.replace(/\.json$/i, '').toUpperCase();
+      if (f.toLowerCase().endsWith('.json') && !codes.includes(code)) {
+        await unlink(path.join(setsDir, f));
+        console.error(`  prune  ${f} (not in targets.json)`);
+      }
+    }
+  }
+
   // index.json: one entry per set, every eligible box listed, the targeted one flagged.
   const bySet = new Map<string, IndexSet>();
   for (const { set, spec } of built) {
@@ -75,7 +84,7 @@ async function main() {
         name: set.name,
         releaseDate: set.releaseDate,
         type: set.type,
-        boxes: set.boxes.map((b) => ({ uuid: b.uuid, name: b.name, subtype: b.subtype, packs: b.packs, booster: b.booster, price: b.price, tcgId: b.tcgId, target: false })),
+        boxes: set.boxes.map((b) => ({ uuid: b.uuid, name: b.name, subtype: b.subtype, packs: b.packs, booster: b.booster, ...(b.extras ? { extras: b.extras } : {}), price: b.price, tcgId: b.tcgId, target: false })),
         unpricedCards: set.diagnostics.unpricedCards,
         sheetCards: set.diagnostics.sheetCards
       };
@@ -101,6 +110,16 @@ async function main() {
     sets
   };
   await writeFile(path.join(outDir, 'index.json'), JSON.stringify(index, null, 1));
+
+  // Local overlay: quotes gathered by hand or by a supervised agent (buylist/*.csv). Never committed.
+  const localDir = path.join(outDir, 'local');
+  await mkdir(localDir, { recursive: true });
+  const rows = await loadCustomBuylist();
+  const { overlay, unresolved } = compileOverlay(rows, ctx.setCache.values());
+  await writeFile(path.join(localDir, 'buylist.json'), JSON.stringify(overlay));
+  const resolvedCount = Object.values(overlay.quotes).reduce((n, q) => n + Object.keys(q).length, 0);
+  if (rows.length) console.error(`  local  ${resolvedCount} hand-gathered quote(s) from buylist/*.csv → public/data/local/buylist.json (gitignored)`);
+  for (const r of unresolved) console.error(`  warn   buylist/${r.file}: could not match ${r.set} ${r.number ?? ''} ${r.name ?? ''} (${r.finish}); check the set code and collector number`);
 
   // catalog.json: every set with a draftable box, for the "add a set" picker.
   if (!flag('--no-catalog')) {

@@ -1,6 +1,6 @@
 import type { BoxProduct, CardRow, CatalogEntry, Finish, PriceTriple, SetData, SetDiagnostics } from '../engine/types';
 import { rawPrice, sheetFinish } from '../engine/value';
-import { cardKingdomBuylist, type CustomBuylistRow } from './buylist';
+import { cardKingdomBuylist } from './buylist';
 import { eligibleBoxes, loadSet, type RawCard, type RawMeta, type RawPricesToday, type RawSet, type RawSetListEntry } from './mtgjson';
 import { loadGroupPrices, mergeTables, type PriceTable } from './tcgcsv';
 
@@ -11,7 +11,6 @@ export interface BuildContext {
   tcgcsvUpdated: string;
   prices?: RawPricesToday;
   pricesMeta?: RawMeta;
-  customBuylist: CustomBuylistRow[];
   setCache: Map<string, RawSet>;
   priceCache: Map<number, PriceTable>;
 }
@@ -45,8 +44,14 @@ export async function buildSet(ctx: BuildContext, code: string): Promise<SetData
     log(`  skip   ${set.code}: no booster box with a known booster configuration`);
     return null;
   }
-  const configKeys = [...new Set(boxes.map((b) => b.boosterKey))];
   const notes: string[] = [];
+  for (const b of boxes) {
+    const dropped = b.extras.filter((e) => !set.booster?.[e.boosterKey]);
+    for (const e of dropped) notes.push(`${b.product.name}: ${e.count}× ${e.name} has no booster configuration "${e.boosterKey}" and is left out.`);
+    for (const u of b.unresolved) notes.push(`${b.product.name}: ${u} is not a booster pack of this set and is left out.`);
+    b.extras = b.extras.filter((e) => set.booster?.[e.boosterKey]);
+  }
+  const configKeys = [...new Set(boxes.flatMap((b) => [b.boosterKey, ...b.extras.map((e) => e.boosterKey)]))];
 
   // Every set whose cards can appear on these sheets.
   const sourceCodes = new Set<string>([set.code]);
@@ -113,6 +118,7 @@ export async function buildSet(ctx: BuildContext, code: string): Promise<SetData
       ...(b.product.subtype ? { subtype: b.product.subtype } : {}),
       packs: b.packs,
       booster: b.boosterKey,
+      ...(b.extras.length ? { extras: b.extras.map((e) => ({ booster: e.boosterKey, count: e.count, name: e.name })) } : {}),
       ...(tcgId ? { tcgId } : {}),
       price
     };
@@ -142,14 +148,14 @@ export async function buildSet(ctx: BuildContext, code: string): Promise<SetData
     sources: {
       mtgjson: { version: ctx.mtgjsonMeta?.version ?? '?', date: ctx.mtgjsonMeta?.date ?? '?' },
       tcgcsv: { updated: ctx.tcgcsvUpdated },
-      ...(ctx.prices ? { buylist: { provider: 'Card Kingdom buylist via MTGJSON' + (ctx.customBuylist.length ? ' + buylist/*.csv' : ''), date: ctx.pricesMeta?.date ?? '?' } } : {})
+      ...(ctx.prices ? { buylist: { provider: 'Card Kingdom buylist via MTGJSON', date: ctx.pricesMeta?.date ?? '?' } } : {})
     },
     cards,
     boosters,
     boxes: boxProducts,
     diagnostics
   };
-  log(`  built  ${set.code} ${set.name}: ${boxProducts.length} box(es), ${configKeys.length} config(s), ${cards.length} cards, ${unpriced}/${seen.size} unpriced`);
+  log(`  built  ${set.code} ${set.name}: ${boxProducts.length} box(es), ${configKeys.length} config(s), ${cards.length} cards, ${unpriced}/${seen.size} unpriced${notes.length ? '; ' + notes.join(' ') : ''}`);
   return data;
 }
 
@@ -173,14 +179,8 @@ function toCardRow(raw: RawCard, prices: PriceTable, ctx: BuildContext): CardRow
     if (triple) p.etched = triple;
   }
   if (Object.keys(p).length) row.p = p;
-  // Buylist: Card Kingdom via MTGJSON, overridden by hand-entered rows.
-  let b: Partial<Record<Finish, number>> | undefined = ctx.prices ? cardKingdomBuylist(ctx.prices, raw.uuid) : undefined;
-  for (const q of ctx.customBuylist) {
-    if (q.set !== raw.setCode.toUpperCase()) continue;
-    const match = q.number ? q.number === raw.number : q.name?.toLowerCase() === raw.name.toLowerCase();
-    if (!match) continue;
-    b = { ...(b ?? {}), [q.finish]: q.price };
-  }
+  // Buylist: Card Kingdom via MTGJSON (public). Hand-gathered quotes are a separate, local overlay.
+  const b: Partial<Record<Finish, number>> | undefined = ctx.prices ? cardKingdomBuylist(ctx.prices, raw.uuid) : undefined;
   if (b && Object.keys(b).length) row.b = b;
   return row;
 }
@@ -209,6 +209,7 @@ export function buildCatalog(setList: RawSetListEntry[]): CatalogEntry[] {
         ...(b.product.subtype ? { subtype: b.product.subtype } : {}),
         packs: b.packs,
         booster: b.boosterKey,
+        ...(b.extras.length ? { extras: b.extras.map((e) => `${e.count}× ${e.name}`) } : {}),
         ...(toInt(b.product.identifiers?.tcgplayerProductId) ? { tcgId: toInt(b.product.identifiers?.tcgplayerProductId) } : {})
       }))
     });

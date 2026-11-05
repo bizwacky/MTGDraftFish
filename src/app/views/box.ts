@@ -3,7 +3,7 @@ import type { BoxProduct, DataIndex, IndexBox, SetData } from '../../engine/type
 import { BASIS_LABEL } from '../../engine/value';
 import { normalCdf } from '../../engine/stats';
 import { analytic, contributions, simulate, simulateSync } from '../compute';
-import { loadSet } from '../data';
+import { loadSetInfo } from '../data';
 import { clear, debounce, h } from '../dom';
 import { fmtInt, fmtPct, fmtUsd, groupPhrase, inTwenty, plural } from '../format';
 import type { Store } from '../state';
@@ -34,12 +34,14 @@ export function mountBox(root: HTMLElement, index: DataIndex, store: Store, uuid
 
   let set: SetData | null = null;
   let box: BoxProduct | null = null;
+  let localQuotes = 0;
   let disposed = false;
   const refreshSoon = debounce(() => !disposed && refresh(), 60);
 
-  loadSet(setEntry.code)
-    .then((s) => {
+  loadSetInfo(setEntry.code)
+    .then(({ set: s, localQuotes: n }) => {
       set = s;
+      localQuotes = n;
       box = s.boxes.find((b) => b.uuid === uuid) ?? null;
       if (!box) throw new Error(`Box ${uuid} is missing from ${s.code}.json; run npm run refresh.`);
       document.title = `${box.name} · MTGDraftFish`;
@@ -61,7 +63,7 @@ export function mountBox(root: HTMLElement, index: DataIndex, store: Store, uuid
     const s = set!;
     clear(head);
     head.append(
-      h('p', { class: 'page-kicker t-kicker' }, h('a', { href: '#/', style: { color: 'inherit' } }, 'Target list'), ` · ${s.code} · ${s.releaseDate.slice(0, 4)} · ${s.type.replace('_', ' ')} · ${b.packs} packs`),
+      h('p', { class: 'page-kicker t-kicker' }, h('a', { href: '#/', style: { color: 'inherit' } }, 'Target list'), ` · ${s.code} · ${s.releaseDate.slice(0, 4)} · ${s.type.replace('_', ' ')} · ${b.packs} packs${b.extras?.length ? ' + ' + b.extras.map((e) => `${e.count} ${e.name.replace(s.name, '').trim().toLowerCase()}`).join(', ') : ''}`),
       h('h1', { class: 'page-title t-headline' }, b.name)
     );
     if (indexBox.note) head.append(h('p', { class: 'page-dek lede t-dek' }, indexBox.note));
@@ -99,12 +101,14 @@ export function mountBox(root: HTMLElement, index: DataIndex, store: Store, uuid
     const sd = a.moments.sdBox;
     const basisName = BASIS_LABEL[rules.basis];
     const setShort = s.name;
+    const extrasText = b.extras?.length ? ' plus ' + b.extras.map((e) => `${e.count} ${e.name.replace(s.name, '').trim().toLowerCase()}`).join(' and ') : '';
+    const localHere = rules.basis === 'buylist' ? cards.filter((c) => s.cards[c.card].bq?.[c.finish]).length : 0;
 
     // KPIs
     clear(kpis);
     Halftone.render.StatTile(kpis, { tiles: [
       { label: 'Expected recoup value per box', value: ev, format: '$int', hero: false, note: price != null ? `${fmtPct(ev / price)} of a ${fmtUsd(price)} purchase price` : 'Enter a purchase price to compare' },
-      { label: 'Standard deviation', value: sd, format: '$int', note: `${fmtUsd(a.moments.sdPack)} per pack, ${fmtUsd(a.moments.evPack)} expected per pack` },
+      { label: 'Standard deviation', value: sd, format: '$int', note: `${fmtUsd(a.moments.sdPack)} per pack, ${fmtUsd(a.moments.evPack)} expected per pack${a.moments.evExtras ? `, ${fmtUsd(a.moments.evExtras)} from the box topper` : ''}` },
       { label: 'Median box', value: sim ? sim.summary.median : null, format: '$int', note: sim ? `5th–95th percentile ${fmtUsd(sim.summary.p5)}–${fmtUsd(sim.summary.p95)}` : 'Simulating…' },
       { label: 'Recoups the purchase price', value: pBE == null ? (price == null ? '–' : '…') : inTwenty(pBE), note: pBE == null ? `${nBoxes.toLocaleString('en-US')} boxes simulated` : `${fmtPct(pBE, 1)} of ${nBoxes.toLocaleString('en-US')} simulated boxes` },
       { label: 'Sticker value', value: a.stickerEv, format: '$int', note: `every card at 100% of ${basisName}, no floor` }
@@ -153,7 +157,7 @@ export function mountBox(root: HTMLElement, index: DataIndex, store: Store, uuid
       Halftone.render.Figure(figGroups, {
         kicker: 'Fig. 03 · Where the value sits',
         title: `${groupPhrase(top.group)} carry ${fmtPct(top.share)} of the box’s expected value`,
-        dek: `Expected recoup value per box by rarity and finish, US dollars. ${plural(b.packs, 'pack')}: ${b.packs}; cards per pack: ${a.model.cardsPerPack.toFixed(1)}.`,
+        dek: `Expected recoup value per box by rarity and finish, US dollars. ${b.packs} ${plural(b.packs, 'pack')} of ${a.model.main.cardsPerPack.toFixed(1)} cards${extrasText}.`,
         chart: { type: 'BarChart', data: groups.map((g) => ({ group: g.group, ev: g.ev })), category: 'group', value: 'ev', format: '$int', sort: 'desc', name: 'EV per box', categoryLabel: 'Rarity (finish)', valueLabel: 'EV per box, $' },
         notes: `Timeshifted, bonus-sheet and other special printings keep their MTGJSON rarity ("special", "bonus").`,
         source: sourceLine(index),
@@ -181,15 +185,24 @@ export function mountBox(root: HTMLElement, index: DataIndex, store: Store, uuid
           { key: 'rarity', label: 'Rarity' },
           { key: 'finish', label: 'Finish' },
           { key: 'price', label: 'Price, $', format: '$number2', numeric: true },
+          ...(rules.basis === 'buylist' ? [{ key: 'quote', label: 'Quote' }] : []),
           { key: 'value', label: 'Counts as, $', format: '$number2', numeric: true },
           { key: 'copies', label: 'Copies per box', format: 'number2', numeric: true },
           { key: 'p1', label: 'Chance of 1+ per box', format: 'percent0', numeric: true },
           { key: 'ev', label: 'EV per box, $', format: '$number2', numeric: true },
           { key: 'share', label: 'Share of EV', format: 'percent1', numeric: true }
         ],
-        rows: topCards.map((c) => ({ name: c.name, set: c.set, rarity: c.rarity, finish: c.finish, price: c.price, value: c.value, copies: c.copiesPerBox, p1: c.pAtLeastOne, ev: c.ev, share: c.share }))
+        rows: topCards.map((c) => {
+          const card = s.cards[c.card];
+          const q = card.bq?.[c.finish];
+          const quote = q ? `${q.s} ${q.d}` : card.b?.[c.finish] != null ? 'Card Kingdom' : 'none';
+          return { name: c.name, set: c.set, rarity: c.rarity, finish: c.finish, price: c.price, quote, value: c.value, copies: c.copiesPerBox, p1: c.pAtLeastOne, ev: c.ev, share: c.share };
+        })
       },
-      notes: unpriced ? `Caution: ${unpriced} of ${s.diagnostics.sheetCards} card finishes on the sheets have no TCGplayer price and count as $0.` : `All ${s.diagnostics.sheetCards} card finishes on the sheets have a TCGplayer price.`,
+      notes: [
+        unpriced ? `Caution: ${unpriced} of ${s.diagnostics.sheetCards} card finishes on the sheets have no TCGplayer price and count as $0.` : `All ${s.diagnostics.sheetCards} card finishes on the sheets have a TCGplayer price.`,
+        ...(rules.basis === 'buylist' ? [localHere ? `${localHere} of this box's card finishes use a quote gathered by hand (the Quote column names the source and date); the rest use Card Kingdom's buylist, and cards neither buys count as $0.` : `Buylist quotes are Card Kingdom's via MTGJSON; cards it is not buying count as $0. No hand-gathered quotes are loaded for this box.`] : [])
+      ],
       source: sourceLine(index),
       codeUrl: REPO,
       filename: `${s.code}-top-cards`
@@ -201,9 +214,9 @@ export function mountBox(root: HTMLElement, index: DataIndex, store: Store, uuid
     notes.append(
       h('h2', { class: 'section-title t-title' }, 'How this was computed'),
       h('ul', { class: 'notes-list t-body' },
-        h('li', null, `Pack contents come from MTGJSON’s booster data for “${b.booster}” (${cfg.packs.length} ${plural(cfg.packs.length, 'layout')}, ${Object.keys(cfg.sheets).length} print sheets${cfg.sourceSetCodes.length > 1 ? ', cards from ' + cfg.sourceSetCodes.join(', ') : ''}). Each slot draws from its sheet in proportion to the sheet weights.`),
+        h('li', null, `Pack contents come from MTGJSON’s booster data for “${b.booster}” (${cfg.packs.length} ${plural(cfg.packs.length, 'layout')}, ${Object.keys(cfg.sheets).length} print sheets${cfg.sourceSetCodes.length > 1 ? ', cards from ' + cfg.sourceSetCodes.join(', ') : ''}). Each slot draws from its sheet in proportion to the sheet weights.${b.extras?.length ? ` The box also deals ${b.extras.map((e) => `${e.count} ${e.name.replace(s.name, '').trim().toLowerCase()} (“${e.booster}”)`).join(' and ')}, modelled the same way.` : ''}`),
         h('li', null, `Expected value and standard deviation are exact under that model, with packs independent and draws within a slot treated as independent. The simulation draws without replacement inside a slot where MTGJSON does not allow duplicates, and skips colour balancing.`),
-        h('li', null, `Prices: ${basisName}, from TCGCSV’s daily export of TCGplayer prices (${s.sources.tcgcsv.updated.slice(0, 10)}). Foil sheets use the foil price; a missing finish falls back to the other finish, a missing figure to the next one (market → mid → low).${s.sources.buylist ? ` Buylist basis: ${s.sources.buylist.provider} (${s.sources.buylist.date}).` : ''}`),
+        h('li', null, `Prices: ${basisName}, from TCGCSV’s daily export of TCGplayer prices (${s.sources.tcgcsv.updated.slice(0, 10)}). Foil sheets use the foil price; a missing finish falls back to the other finish, a missing figure to the next one (market → mid → low).${s.sources.buylist ? ` Buylist basis: ${s.sources.buylist.provider} (${s.sources.buylist.date})${localQuotes ? `, with ${localQuotes} card finishes in this set overlaid by quotes gathered by hand (local to this machine, never published)` : ''}.` : ''}`),
         h('li', null, `Recoup rules: ${rulesSentence(store)}. Simulation: ${nBoxes.toLocaleString('en-US')} boxes, fixed seed, so the same inputs always give the same picture.`),
         h('li', null, `Not modelled: box toppers and inserts outside MTGJSON’s booster data, print-run collation, condition, shipping and fees, and the time it takes to sell ${fmtInt(a.moments.cardsPerBox)} cards.`)
       ),

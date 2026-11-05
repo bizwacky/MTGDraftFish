@@ -3,3 +3,8 @@ dist/
 .cache/
 *.log
 .DS_Store
+
+# Buylist quotes gathered by hand or by a supervised agent stay on this machine.
+buylist/*.csv
+!buylist/template.csv
+public/data/local/

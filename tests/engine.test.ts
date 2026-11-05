@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { loadCustomBuylist } from '../src/pipeline/buylist';
 import {
+  applyBuylistOverlay,
   applyTiers,
   boxMoments,
+  buildBoxModel,
   buildPackModel,
   cardContributions,
   cardValue,
@@ -107,9 +113,10 @@ describe('pack model and exact moments', () => {
     expect(m.variants[1].mean).toBeCloseTo(v2, 4);
     expect(m.mean).toBeCloseTo(0.75 * v1 + 0.25 * v2, 4);
     expect(m.cardsPerPack).toBeCloseTo(6);
-    const box = boxMoments(m, 36);
+    const box = boxMoments(buildBoxModel(set, set.boxes[0], rules));
     expect(box.evBox).toBeCloseTo(36 * m.mean, 6);
     expect(box.sdBox).toBeCloseTo(Math.sqrt(36 * m.variance), 6);
+    expect(box.evExtras).toBe(0);
   });
 
   it('agrees with brute-force enumeration of the pack distribution', () => {
@@ -144,7 +151,7 @@ describe('pack model and exact moments', () => {
   it('attributes EV to cards and groups', () => {
     const set = tinySet();
     const m = buildPackModel(set, 'draft', rules);
-    const contribs = cardContributions(m, set, 36, rules);
+    const contribs = cardContributions(buildBoxModel(set, set.boxes[0], rules), set, rules);
     const total = contribs.reduce((s, c) => s + c.ev, 0);
     expect(total).toBeCloseTo(36 * m.mean, 6);
     const chase = contribs.find((c) => c.name === 'Chase' && c.finish === 'nonfoil')!;
@@ -169,7 +176,7 @@ describe('pack model and exact moments', () => {
     const m = buildPackModel(set, 'jump', rules);
     expect(m.mean).toBeCloseTo(28 + 2.8 + 1.4);
     expect(m.variance).toBe(0);
-    const sim = simulateBoxes(m, 10, { boxes: 50, seed: 1 });
+    const sim = simulateBoxes(buildBoxModel(set, { uuid: 'j', name: 'Jump box', packs: 10, booster: 'jump' }, rules), { boxes: 50, seed: 1 });
     expect(sim[0]).toBeCloseTo(10 * (28 + 2.8 + 1.4));
     expect(sim[49]).toBeCloseTo(10 * (28 + 2.8 + 1.4));
   });
@@ -181,10 +188,10 @@ describe('simulation', () => {
     set.boosters.draft.sheets.rare.allowDuplicates = true;
     set.boosters.draft.sheets.uncommon.allowDuplicates = true;
     set.boosters.draft.sheets.common.allowDuplicates = true;
-    const m = buildPackModel(set, 'draft', rules);
-    const exact = boxMoments(m, 36);
-    const a = simulateBoxes(m, 36, { boxes: 40000, seed: 42 });
-    const b = simulateBoxes(m, 36, { boxes: 40000, seed: 42 });
+    const bm = buildBoxModel(set, set.boxes[0], rules);
+    const exact = boxMoments(bm);
+    const a = simulateBoxes(bm, { boxes: 40000, seed: 42 });
+    const b = simulateBoxes(bm, { boxes: 40000, seed: 42 });
     expect(Array.from(a.subarray(0, 50))).toEqual(Array.from(b.subarray(0, 50)));
     const s = summarize(a);
     const se = exact.sdBox / Math.sqrt(a.length);
@@ -212,13 +219,64 @@ describe('simulation', () => {
     };
     // n <= count falls back to with-replacement, so use a 3-card sheet with 2 draws instead.
     set.boosters.only.sheets.uncommon.cards = [[3, 1], [4, 1], [5, 1]];
-    const m = buildPackModel(set, 'only', rules);
-    const sim = simulateBoxes(m, 1, { boxes: 5000, seed: 7 });
+    const sim = simulateBoxes(buildBoxModel(set, { uuid: 'o', name: 'One pack', packs: 1, booster: 'only' }, rules), { boxes: 5000, seed: 7 });
     // Without replacement, two draws from {1.05, 0, 0} give 1.05 with probability 2/3 and never 2.1.
     expect(sim[sim.length - 1]).toBeCloseTo(1.05);
     const share = shareAtLeast(sim, 1.0);
     expect(share).toBeGreaterThan(0.63);
     expect(share).toBeLessThan(0.70);
+  });
+});
+
+describe('box extras and local quotes', () => {
+  it('adds a box-topper pack to the box moments, contributions and simulation', () => {
+    const set = tinySet();
+    set.boosters.topper = {
+      totalWeight: 1,
+      sourceSetCodes: ['TST'],
+      packs: [{ weight: 1, contents: { top: 1 } }],
+      sheets: { top: { foil: true, totalWeight: 2, cards: [[0, 1], [1, 1]] } } // foil Chase (120 → 84) or foil Playable (4 → 2.8)
+    };
+    const box = { uuid: 't', name: 'Topper box', packs: 2, booster: 'draft', extras: [{ booster: 'topper', count: 1, name: 'Topper pack' }] };
+    const bm = buildBoxModel(set, box, rules);
+    const pack = buildPackModel(set, 'draft', rules);
+    const topMean = 0.5 * 84 + 0.5 * 2.8;
+    expect(bm.mean).toBeCloseTo(2 * pack.mean + topMean, 6);
+    expect(bm.variance).toBeCloseTo(2 * pack.variance + (0.5 * 84 * 84 + 0.5 * 2.8 * 2.8 - topMean * topMean), 6);
+    const mom = boxMoments(bm);
+    expect(mom.evExtras).toBeCloseTo(topMean);
+    const contribs = cardContributions(bm, set, rules);
+    expect(contribs.reduce((x, c) => x + c.ev, 0)).toBeCloseTo(bm.mean, 6);
+    const chaseFoil = contribs.find((c) => c.name === 'Chase' && c.finish === 'foil')!;
+    // 2 main packs each with a 1/4 foil slot that is Chase 1/3 of the time, plus the topper at 1/2
+    expect(chaseFoil.copiesPerBox).toBeCloseTo(2 * 0.25 / 3 + 0.5, 6);
+    expect(chaseFoil.pAtLeastOne).toBeCloseTo(1 - Math.pow(1 - 0.25 / 3, 2) * 0.5, 6);
+    const sim = simulateBoxes(bm, { boxes: 30000, seed: 3 });
+    const s = summarize(sim);
+    expect(Math.abs(s.mean - bm.mean)).toBeLessThan(4 * Math.sqrt(bm.variance / sim.length));
+  });
+
+  it('lays local quotes over the cards and records their source', () => {
+    const set = tinySet();
+    const n = applyBuylistOverlay(set, { generatedAt: 'now', quotes: { Chase: { nonfoil: { price: 30, source: 'GameNerdz', date: '2026-11-05' }, foil: { price: 0, source: 'GameNerdz', date: '2026-11-05' } }, Nope: { nonfoil: { price: 1, source: 'x', date: 'y' } } } });
+    expect(n).toBe(2);
+    const chase = set.cards[0];
+    expect(chase.b?.nonfoil).toBe(30);
+    expect(chase.b?.foil).toBe(0);
+    expect(chase.bq?.nonfoil).toEqual({ s: 'GameNerdz', d: '2026-11-05' });
+    expect(rawPrice(chase, 'nonfoil', 'buylist')).toBe(30);
+    expect(rawPrice(chase, 'foil', 'buylist')).toBe(30); // a 0 quote means "not buying": falls through to the nonfoil quote
+    expect(set.cards[1].b?.nonfoil).toBe(2); // untouched Card Kingdom value
+  });
+
+  it('reads hand-entered CSV rows with optional source and date', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'buylist-'));
+    await writeFile(path.join(dir, 'a.csv'), 'set,number,name,finish,price,source,date,notes\nMH2,57,"Ragavan, Nimble Pilferer",nonfoil,38.50,GameNerdz,2026-11-05,"ok, matched"\nMH2,,Urza\'s Saga,foil,$20,,,\nMH2,1,Blank,,,GameNerdz,2026-11-05,not buying\n# comment\n');
+    const rows = await loadCustomBuylist(dir);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({ set: 'MH2', number: '57', name: 'Ragavan, Nimble Pilferer', finish: 'nonfoil', price: 38.5, source: 'GameNerdz', date: '2026-11-05' });
+    expect(rows[1]).toMatchObject({ set: 'MH2', name: "Urza's Saga", finish: 'foil', price: 20, source: 'manual' });
+    expect(rows[1].date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });
 

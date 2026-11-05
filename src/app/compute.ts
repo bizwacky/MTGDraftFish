@@ -1,5 +1,5 @@
 import { boxMoments, cardContributions, groupContributions, type BoxMoments, type CardContribution, type GroupContribution } from '../engine/analytic';
-import { buildPackModel, type PackModel } from '../engine/model';
+import { buildBoxModel, type BoxModel } from '../engine/model';
 import { simulateBoxes } from '../engine/simulate';
 import { histogram, niceBinWidth, quantileDots, shareAtLeast, summarize, type HistogramBin, type Summary } from '../engine/stats';
 import type { BoxProduct, RulesSpec, SetData } from '../engine/types';
@@ -9,7 +9,7 @@ import type { SimRequest, SimResponse } from './sim.worker';
 export const rulesKey = (rules: RulesSpec) => JSON.stringify({ b: rules.basis, t: rules.tiers.map((t) => [t.min, t.pct]) });
 
 export interface Analytic {
-  model: PackModel;
+  model: BoxModel;
   moments: BoxMoments;
   /** Box EV with every card at 100% of the basis price and no floor */
   stickerEv: number;
@@ -20,9 +20,9 @@ export function analytic(set: SetData, box: BoxProduct, rules: RulesSpec): Analy
   const key = box.uuid + '|' + rulesKey(rules);
   let a = analyticMemo.get(key);
   if (!a) {
-    const model = buildPackModel(set, box.booster, rules);
-    const sticker = buildPackModel(set, box.booster, { ...STICKER_RULES, basis: rules.basis });
-    a = { model, moments: boxMoments(model, box.packs), stickerEv: boxMoments(sticker, box.packs).evBox };
+    const model = buildBoxModel(set, box, rules);
+    const sticker = buildBoxModel(set, box, { ...STICKER_RULES, basis: rules.basis });
+    a = { model, moments: boxMoments(model), stickerEv: boxMoments(sticker).evBox };
     analyticMemo.set(key, a);
   }
   return a;
@@ -33,7 +33,7 @@ export function contributions(set: SetData, box: BoxProduct, rules: RulesSpec) {
   const key = box.uuid + '|' + rulesKey(rules);
   let c = contribMemo.get(key);
   if (!c) {
-    const cards = cardContributions(analytic(set, box, rules).model, set, box.packs, rules);
+    const cards = cardContributions(analytic(set, box, rules).model, set, rules);
     c = { cards, groups: groupContributions(cards) };
     contribMemo.set(key, c);
   }
@@ -85,11 +85,11 @@ class SimPool {
 
   run(set: SetData, box: BoxProduct, rules: RulesSpec, boxes: number, seed: number): Promise<Float64Array> {
     if (!this.worker) {
-      const model = buildPackModel(set, box.booster, rules);
-      return Promise.resolve(simulateBoxes(model, box.packs, { boxes, seed }));
+      const model = buildBoxModel(set, box, rules);
+      return Promise.resolve(simulateBoxes(model, { boxes, seed }));
     }
     const id = this.nextId++;
-    const req: SimRequest = { id, setCode: set.code, boosterKey: box.booster, packs: box.packs, rules, boxes, seed };
+    const req: SimRequest = { id, setCode: set.code, box: { uuid: box.uuid, name: box.name, packs: box.packs, booster: box.booster, extras: box.extras }, rules, boxes, seed };
     if (!this.loaded.has(set.code)) {
       req.set = set;
       this.loaded.add(set.code);

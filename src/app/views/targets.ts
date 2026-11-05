@@ -141,7 +141,7 @@ export function mountTargets(root: HTMLElement, index: DataIndex, store: Store):
       cells.set(row.box.uuid, c);
       tbody.append(h('tr', null,
         h('th', { scope: 'row', class: 'cell-box' }, h('a', { href: `#/box/${row.box.uuid}` }, row.label), h('small', { class: 't-source' }, `${row.set.code} · ${row.box.name.replace(row.set.name, '').trim() || row.box.name} · ${row.set.releaseDate.slice(0, 4)}`)),
-        h('td', { class: 'num' }, String(row.box.packs)),
+        h('td', { class: 'num' }, String(row.box.packs) + (row.box.extras?.length ? ' + ' + row.box.extras.map((e) => `${e.count} topper`).join(', ') : '')),
         h('td', { class: 'num price' }, input, h('span', { class: 'hint t-source' }, market != null ? `TCGplayer ${fmtUsd(market)}` : 'no TCGplayer box price')),
         c.sticker, c.ev, c.ratio, c.sd, c.median, c.range, c.be
       ));

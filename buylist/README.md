@@ -1,27 +1,25 @@
-# Hand-entered buylist quotes
+# Hand-gathered buylist quotes
 
-Drop one or more `.csv` files in this folder and `npm run refresh` will merge them into the
-`buylist` price basis, overriding the automatic Card Kingdom quotes card by card.
+Any `.csv` in this folder is read by `npm run refresh` and written to `public/data/local/buylist.json`,
+which the site and the CLI lay over the automatic Card Kingdom quotes when the price basis is
+**Buylist**. Both the CSVs and that JSON are gitignored: quotes you gathered from a store stay on
+your machine and are never committed or published.
 
-This is the place for buylist prices you looked up yourself (for example GameNerdz, whose
-buylist is readable in a browser but has no documented API and whose terms prohibit automated
-price gathering). Enter only what you read by hand.
-
-Columns (header row required; order does not matter):
+Columns (header row required; order does not matter; extra columns are ignored):
 
 | column   | required | notes |
 |----------|----------|-------|
-| `set`    | yes      | MTGJSON set code, e.g. `INV` |
+| `set`    | yes      | MTGJSON set code, e.g. `MH2` |
 | `number` | one of number/name | collector number, e.g. `57` |
 | `name`   | one of number/name | exact card name (used when `number` is empty) |
 | `finish` | no       | `nonfoil` (default), `foil` or `etched` |
-| `price`  | yes      | cash price in USD |
+| `price`  | yes      | cash price in USD; a row with an empty price is ignored |
+| `source` | no       | where you read it, e.g. `GameNerdz` (default `manual`) |
+| `date`   | no       | ISO date you read it (default: today) |
+| `notes`  | no       | anything, ignored by the loader |
 
-Example:
+`npm run buylist:todo` writes `buylist/todo.csv`: the cards that carry most of the expected value of
+the boxes on the target list, in this format with `price` left blank. Fill in the prices you read,
+move the filled rows to `buylist/gamenerdz.csv` (any name works), and run `npm run refresh`.
 
-```csv
-set,number,name,finish,price
-INV,57,Fact or Fiction,nonfoil,3.50
-INV,57,Fact or Fiction,foil,140
-TSP,,Ancestral Vision,,22
-```
+See `docs/gamenerdz-buylist-workflow.md` for the supervised lookup procedure.

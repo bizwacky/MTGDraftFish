@@ -1,4 +1,4 @@
-import type { Finish, RulesSpec, SetData, SheetData } from './types';
+import type { BoxProduct, Finish, RulesSpec, SetData, SheetData } from './types';
 import { cardValue, normalizeTiers, sheetFinish } from './value';
 
 /** One sheet of a booster configuration with every card already valued under the rules. */
@@ -137,4 +137,43 @@ export function buildPackModel(set: SetData, boosterKey: string, rules: RulesSpe
   }
   const variance = Math.max(0, second - mean * mean);
   return { setCode: set.code, boosterKey, sheets, variants, mean, variance, cardsPerPack };
+}
+
+export interface BoxComponent {
+  name: string;
+  /** Packs of this kind in the box */
+  count: number;
+  model: PackModel;
+}
+
+/** A sealed box: N main packs plus any extras (box toppers), each a pack model of its own. */
+export interface BoxModel {
+  setCode: string;
+  boxUuid: string;
+  packs: number;
+  main: PackModel;
+  extras: BoxComponent[];
+  /** All components, main first */
+  components: BoxComponent[];
+  /** Expected recoup value of the box */
+  mean: number;
+  /** Variance of the box's recoup value (packs independent) */
+  variance: number;
+  /** Expected number of cards in the box */
+  cards: number;
+}
+
+export function buildBoxModel(set: SetData, box: BoxProduct, rules: RulesSpec): BoxModel {
+  const main = buildPackModel(set, box.booster, rules);
+  const extras: BoxComponent[] = (box.extras ?? []).filter((e) => set.boosters[e.booster]).map((e) => ({ name: e.name, count: e.count, model: buildPackModel(set, e.booster, rules) }));
+  const components = [{ name: box.name, count: box.packs, model: main }, ...extras];
+  let mean = 0;
+  let variance = 0;
+  let cards = 0;
+  for (const c of components) {
+    mean += c.count * c.model.mean;
+    variance += c.count * c.model.variance;
+    cards += c.count * c.model.cardsPerPack;
+  }
+  return { setCode: set.code, boxUuid: box.uuid, packs: box.packs, main, extras, components, mean, variance, cards };
 }

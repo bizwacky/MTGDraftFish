@@ -34,6 +34,16 @@ export interface CardRow {
   p?: Partial<Record<Finish, PriceTriple>>;
   /** Buylist cash price by finish (USD) */
   b?: Partial<Record<Finish, number>>;
+  /** Where a buylist price came from, when it was overlaid from a local quote file: s = source, d = date */
+  bq?: Partial<Record<Finish, { s: string; d: string }>>;
+}
+
+/** An extra pack dealt with every box, e.g. a box-topper pack. */
+export interface BoxExtra {
+  /** Key into SetData.boosters */
+  booster: string;
+  count: number;
+  name: string;
 }
 
 export interface SheetData {
@@ -69,6 +79,8 @@ export interface BoxProduct {
   packs: number;
   /** Key into SetData.boosters */
   booster: string;
+  /** Extra packs in the box (box toppers) */
+  extras?: BoxExtra[];
   /** TCGplayer product id of the sealed box */
   tcgId?: number;
   /** TCGplayer price of the sealed box [low, mid, market] */
@@ -137,6 +149,7 @@ export interface IndexBox {
   subtype?: string;
   packs: number;
   booster: string;
+  extras?: BoxExtra[];
   price?: PriceTriple | null;
   tcgId?: number;
   /** True when this box is the one targets.json pointed at */
@@ -169,5 +182,18 @@ export interface CatalogEntry {
   name: string;
   releaseDate: string;
   type: string;
-  boxes: { uuid: string; name: string; subtype?: string; packs: number; booster: string; tcgId?: number }[];
+  boxes: { uuid: string; name: string; subtype?: string; packs: number; booster: string; extras?: string[]; tcgId?: number }[];
+}
+
+/** A hand-gathered buylist quote for one printing and finish. */
+export interface BuylistQuote {
+  price: number;
+  source: string;
+  date: string;
+}
+
+/** public/data/local/buylist.json: quotes gathered by hand or by a supervised agent. Never committed. */
+export interface BuylistOverlay {
+  generatedAt: string;
+  quotes: Record<string, Partial<Record<Finish, BuylistQuote>>>;
 }

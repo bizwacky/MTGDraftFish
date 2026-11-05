@@ -6,3 +6,4 @@ export * from './simulate';
 export * from './stats';
 export * from './random';
 export * from './boxes';
+export * from './overlay';

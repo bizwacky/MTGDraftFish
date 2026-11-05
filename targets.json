@@ -1,54 +1,22 @@
 {
   "defaults": {
     "basis": "mid",
-    "tiers": [
-      {
-        "min": 1,
-        "pct": 0.7
-      }
-    ],
+    "tiers": [{ "min": 1, "pct": 0.7 }],
     "boxes": 20000
   },
   "targets": [
-    {
-      "set": "INV",
-      "box": "draft",
-      "note": "Invasion: the multicolor block, widely praised as one of the best draft formats of its era."
-    },
-    {
-      "set": "RAV",
-      "box": "draft",
-      "note": "Ravnica: City of Guilds. Guild drafting, bounce lands, Glare of Subdual."
-    },
-    {
-      "set": "TSP",
-      "box": "draft",
-      "note": "Time Spiral: timeshifted sheet, suspend, slivers. Dense and skill-testing."
-    },
-    {
-      "set": "ROE",
-      "box": "draft",
-      "note": "Rise of the Eldrazi: the slow battlecruiser format, often named among the best draft formats ever."
-    },
-    {
-      "set": "ISD",
-      "box": "draft",
-      "note": "Innistrad: flashback, double-faced cards, Spider Spawning."
-    },
-    {
-      "set": "KTK",
-      "box": "draft",
-      "note": "Khans of Tarkir: wedges, morph, fetch lands in the rare slot."
-    },
-    {
-      "set": "MM3",
-      "box": "draft",
-      "note": "Modern Masters 2017: the Ravnica-flavored cube-in-a-box, 24 packs."
-    },
-    {
-      "set": "DOM",
-      "box": "draft",
-      "note": "Dominaria: a modern-era favorite, historic and sagas."
-    }
+    { "set": "ISD", "box": "draft", "note": "Innistrad, 2011. 36 draft boosters." },
+    { "set": "KTK", "box": "draft", "note": "Khans of Tarkir, 2014. 36 draft boosters; fetch lands in the rare slot." },
+    { "set": "UST", "box": "draft", "note": "Unstable, 2017. 36 boosters; silver-bordered set with full-art basic lands." },
+    { "set": "DOM", "box": "draft", "note": "Dominaria, 2018. 36 draft boosters." },
+    { "set": "UMA", "box": "draft", "note": "Ultimate Masters, 2018. 24 draft boosters plus one box-topper pack." },
+    { "set": "MH1", "box": "draft", "note": "Modern Horizons, 2019. 36 draft boosters." },
+    { "set": "STX", "box": "draft", "note": "Strixhaven: School of Mages, 2021. 36 draft boosters with a Mystical Archive slot." },
+    { "set": "MH2", "box": "draft", "note": "Modern Horizons 2, 2021. 36 draft boosters." },
+    { "set": "2X2", "box": "draft", "note": "Double Masters 2022. 24 draft boosters with two rare slots." },
+    { "set": "MOM", "box": "draft", "note": "March of the Machine, 2023. 36 draft boosters with a Multiverse Legends slot." },
+    { "set": "FDN", "box": "play", "note": "Foundations, 2024. 36 play boosters." },
+    { "set": "DFT", "box": "play", "note": "Aetherdrift, 2025. 30 play boosters plus one box-topper pack." },
+    { "set": "FIN", "box": "play", "note": "Final Fantasy, 2025. 30 play boosters." }
   ]
 }

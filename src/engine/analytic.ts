@@ -1,21 +1,30 @@
-import type { PackModel, SheetModel } from './model';
+import type { BoxModel, SheetModel } from './model';
 import type { Finish, RulesSpec, SetData } from './types';
 import { rawPrice } from './value';
 
 export interface BoxMoments {
   packs: number;
+  /** Main pack */
   evPack: number;
   sdPack: number;
   evBox: number;
   sdBox: number;
   cardsPerBox: number;
+  /** EV contributed by extras (box toppers) */
+  evExtras: number;
 }
 
 /** Exact mean and standard deviation of a box under the model (packs independent, draws with replacement). */
-export function boxMoments(model: PackModel, packs: number): BoxMoments {
-  const evPack = model.mean;
-  const sdPack = Math.sqrt(model.variance);
-  return { packs, evPack, sdPack, evBox: packs * evPack, sdBox: Math.sqrt(packs * model.variance), cardsPerBox: packs * model.cardsPerPack };
+export function boxMoments(box: BoxModel): BoxMoments {
+  return {
+    packs: box.packs,
+    evPack: box.main.mean,
+    sdPack: Math.sqrt(box.main.variance),
+    evBox: box.mean,
+    sdBox: Math.sqrt(box.variance),
+    cardsPerBox: box.cards,
+    evExtras: box.extras.reduce((s, e) => s + e.count * e.model.mean, 0)
+  };
 }
 
 export interface CardContribution {
@@ -56,10 +65,10 @@ function sheetEntry(sh: SheetModel, key: string): number {
  * Per-(card, finish) expected copies, hit chance and EV contribution for a box.
  * Draws are treated as independent with replacement; `fixed` sheets deal every card every time.
  */
-export function cardContributions(model: PackModel, set: SetData, packs: number, rules: RulesSpec): CardContribution[] {
-  // Every (card, finish) pair that can appear, with the sheets it sits on.
+export function cardContributions(box: BoxModel, set: SetData, rules: RulesSpec): CardContribution[] {
+  // Every (card, finish) pair that can appear anywhere in the box, with the sheets it sits on.
   const meta = new Map<string, { card: number; finish: Finish; value: number; sheets: Set<string> }>();
-  for (const sh of model.sheets) {
+  for (const comp of box.components) for (const sh of comp.model.sheets) {
     for (let i = 0; i < sh.n; i++) {
       const key = sh.cardIdx[i] + ':' + sh.finish[i];
       let m = meta.get(key);
@@ -71,29 +80,33 @@ export function cardContributions(model: PackModel, set: SetData, packs: number,
     }
   }
 
-  const evBox = packs * model.mean;
   const out: CardContribution[] = [];
   for (const [key, m] of meta) {
-    let copiesPerPack = 0;
-    let missPerPack = 0; // P(card absent from a pack) = Σ_variants p_v Π_slots (1 − p_c)^count
-    for (const variant of model.variants) {
-      let absent = 1;
-      for (const slot of variant.slots) {
-        const sh = model.sheets[slot.sheet];
-        const idx = sheetEntry(sh, key);
-        if (idx < 0) continue;
-        if (sh.fixed) {
-          copiesPerPack += variant.p * sh.probs[idx] * sh.weightSum;
-          absent = 0;
-        } else {
-          copiesPerPack += variant.p * slot.count * sh.probs[idx];
-          absent *= Math.pow(1 - sh.probs[idx], slot.count);
+    let copiesPerBox = 0;
+    let missBox = 1; // P(card absent from the whole box) = Π_components P(absent from one pack)^count
+    for (const comp of box.components) {
+      let copiesPerPack = 0;
+      let missPerPack = 0; // Σ_variants p_v Π_slots (1 − p_c)^count
+      for (const variant of comp.model.variants) {
+        let absent = 1;
+        for (const slot of variant.slots) {
+          const sh = comp.model.sheets[slot.sheet];
+          const idx = sheetEntry(sh, key);
+          if (idx < 0) continue;
+          if (sh.fixed) {
+            copiesPerPack += variant.p * sh.probs[idx] * sh.weightSum;
+            absent = 0;
+          } else {
+            copiesPerPack += variant.p * slot.count * sh.probs[idx];
+            absent *= Math.pow(1 - sh.probs[idx], slot.count);
+          }
         }
+        missPerPack += variant.p * absent;
       }
-      missPerPack += variant.p * absent;
+      copiesPerBox += comp.count * copiesPerPack;
+      missBox *= Math.pow(missPerPack, comp.count);
     }
     const card = set.cards[m.card];
-    const copiesPerBox = packs * copiesPerPack;
     const ev = copiesPerBox * m.value;
     out.push({
       card: m.card,
@@ -106,9 +119,9 @@ export function cardContributions(model: PackModel, set: SetData, packs: number,
       price: rawPrice(card, m.finish, rules.basis),
       value: m.value,
       copiesPerBox,
-      pAtLeastOne: 1 - Math.pow(missPerPack, packs),
+      pAtLeastOne: 1 - missBox,
       ev,
-      share: evBox > 0 ? ev / evBox : 0
+      share: box.mean > 0 ? ev / box.mean : 0
     });
   }
   out.sort((a, b) => b.ev - a.ev || (b.price ?? 0) - (a.price ?? 0));
