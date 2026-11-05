@@ -3,9 +3,9 @@
 Drop one or more `.csv` files in this folder and `npm run refresh` will merge them into the
 `buylist` price basis, overriding the automatic Card Kingdom quotes card by card.
 
-This is the place for buylist prices you looked up yourself (for example GameNerdz, which has
-no public price feed and whose terms forbid automated collection). Enter only what you read
-by hand.
+This is the place for buylist prices you looked up yourself (for example GameNerdz, whose
+buylist is readable in a browser but has no documented API and whose terms prohibit automated
+price gathering). Enter only what you read by hand.
 
 Columns (header row required; order does not matter):
 

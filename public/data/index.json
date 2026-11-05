@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-05T06:23:33.317Z",
+ "generatedAt": "2026-11-05T06:35:10.934Z",
  "sources": {
   "mtgjson": {
    "version": "5.3.0+20261104",
@@ -43,7 +43,7 @@
      ],
      "tcgId": 27284,
      "target": true,
-     "note": "Invasion: the multicolor block that set the template for modern draft."
+     "note": "Invasion: the multicolor block, widely praised as one of the best draft formats of its era."
     }
    ],
    "unpricedCards": 0,
@@ -118,7 +118,7 @@
      ],
      "tcgId": 34678,
      "target": true,
-     "note": "Rise of the Eldrazi: the slow, battlecruiser format drafters still rank first."
+     "note": "Rise of the Eldrazi: the slow battlecruiser format, often named among the best draft formats ever."
     }
    ],
    "unpricedCards": 0,
@@ -218,7 +218,7 @@
      ],
      "tcgId": 158423,
      "target": true,
-     "note": "Dominaria: the modern-era favorite, historic and sagas."
+     "note": "Dominaria: a modern-era favorite, historic and sagas."
     }
    ],
    "unpricedCards": 0,

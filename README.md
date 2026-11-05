@@ -77,10 +77,12 @@ next to the recoup EV for context.
 | Card Kingdom buylist (via MTGJSON) | cash buy prices per finish | the `buylist` price basis |
 | `buylist/*.csv` | buylist quotes you entered by hand | override the Card Kingdom quote card by card; see `buylist/README.md` |
 
-**GameNerdz buylist.** The GameNerdz buylist runs on a hosted platform behind a login, has no public
-price feed, and the store's terms prohibit automated price collection. MTGDraftFish therefore does
-not fetch it. Card Kingdom's published buylist is the automatic buylist basis, and quotes you read
-off GameNerdz yourself can be entered in `buylist/*.csv`.
+**GameNerdz buylist.** GameNerdz's buylist is public and readable in a browser, but it has no
+documented API or export: the page is driven by an undocumented internal search endpoint of the
+hosted buylist platform it runs on, and the store's terms of use prohibit "data mining, robots, or
+similar data gathering and extraction tools" and the copying of its prices. MTGDraftFish therefore
+does not fetch it. Card Kingdom's published buylist is the automatic buylist basis, and quotes you
+read off GameNerdz yourself can be entered in `buylist/*.csv`.
 
 ## Method
 
