@@ -1,0 +1,228 @@
+{
+ "generatedAt": "2026-11-05T06:23:33.317Z",
+ "sources": {
+  "mtgjson": {
+   "version": "5.3.0+20261104",
+   "date": "2026-11-04"
+  },
+  "tcgcsv": {
+   "updated": "2026-11-04T20:06:16+0000"
+  },
+  "buylist": {
+   "provider": "Card Kingdom buylist via MTGJSON",
+   "date": "2026-11-04"
+  }
+ },
+ "defaults": {
+  "basis": "mid",
+  "tiers": [
+   {
+    "min": 1,
+    "pct": 0.7
+   }
+  ],
+  "boxes": 20000
+ },
+ "sets": [
+  {
+   "code": "INV",
+   "name": "Invasion",
+   "releaseDate": "2000-10-02",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "3d1ca390-37df-5da1-afa7-65ca63242200",
+     "name": "Invasion Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      1914,
+      1957,
+      null
+     ],
+     "tcgId": 27284,
+     "target": true,
+     "note": "Invasion: the multicolor block that set the template for modern draft."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 680
+  },
+  {
+   "code": "RAV",
+   "name": "Ravnica: City of Guilds",
+   "releaseDate": "2005-10-07",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "9ac94035-6213-5e21-a64f-654cdbec3f05",
+     "name": "Ravnica Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      1418.93,
+      1694.35,
+      null
+     ],
+     "tcgId": 27302,
+     "target": true,
+     "note": "Ravnica: City of Guilds. Guild drafting, bounce lands, Glare of Subdual."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 592
+  },
+  {
+   "code": "TSP",
+   "name": "Time Spiral",
+   "releaseDate": "2006-10-06",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "fe11a8a2-4bdb-556f-9501-a60a936a7533",
+     "name": "Time Spiral Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      12500,
+      12500,
+      1599.95
+     ],
+     "tcgId": 27310,
+     "target": true,
+     "note": "Time Spiral: timeshifted sheet, suspend, slivers. Dense and skill-testing."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 824
+  },
+  {
+   "code": "ROE",
+   "name": "Rise of the Eldrazi",
+   "releaseDate": "2010-04-23",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "fe1d561a-3d93-52e8-890d-1d62214830a9",
+     "name": "Rise of the Eldrazi Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      1884.95,
+      1886.92,
+      1328.03
+     ],
+     "tcgId": 34678,
+     "target": true,
+     "note": "Rise of the Eldrazi: the slow, battlecruiser format drafters still rank first."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 496
+  },
+  {
+   "code": "ISD",
+   "name": "Innistrad",
+   "releaseDate": "2011-09-30",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "c53cf2d7-0d9d-514f-aaf8-2509d47e15d5",
+     "name": "Innistrad Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      630.99,
+      747.35,
+      582.7
+     ],
+     "tcgId": 47791,
+     "target": true,
+     "note": "Innistrad: flashback, double-faced cards, Spider Spawning."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 528
+  },
+  {
+   "code": "KTK",
+   "name": "Khans of Tarkir",
+   "releaseDate": "2014-09-26",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "ab297ade-8bf8-58a3-9d3e-fa32bd561317",
+     "name": "Khans of Tarkir Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      285,
+      317.48,
+      299.06
+     ],
+     "tcgId": 91650,
+     "target": true,
+     "note": "Khans of Tarkir: wedges, morph, fetch lands in the rare slot."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 538
+  },
+  {
+   "code": "MM3",
+   "name": "Modern Masters 2017",
+   "releaseDate": "2017-03-17",
+   "type": "masters",
+   "boxes": [
+    {
+     "uuid": "198acdce-9a66-5dc0-9a4b-00e13eee952c",
+     "name": "Modern Masters 2017 Booster Box",
+     "subtype": "draft",
+     "packs": 24,
+     "booster": "draft",
+     "price": [
+      394.36,
+      412.5,
+      371.05
+     ],
+     "tcgId": 127069,
+     "target": true,
+     "note": "Modern Masters 2017: the Ravnica-flavored cube-in-a-box, 24 packs."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 498
+  },
+  {
+   "code": "DOM",
+   "name": "Dominaria",
+   "releaseDate": "2018-04-27",
+   "type": "expansion",
+   "boxes": [
+    {
+     "uuid": "ad767a4a-7290-57e8-a20c-d8ab386ea450",
+     "name": "Dominaria Booster Box",
+     "subtype": "draft",
+     "packs": 36,
+     "booster": "draft",
+     "price": [
+      187.49,
+      230.99,
+      225.13
+     ],
+     "tcgId": 158423,
+     "target": true,
+     "note": "Dominaria: the modern-era favorite, historic and sagas."
+    }
+   ],
+   "unpricedCards": 0,
+   "sheetCards": 538
+  }
+ ]
+}

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MTGDraftFish</title>
+    <meta name="description" content="Expected value, spread and break-even odds for Magic: The Gathering booster boxes on your draft target list." />
+    <script>
+      // Apply the saved theme before the stylesheet paints, so there is no flash.
+      try {
+        var m = JSON.parse(localStorage.getItem('mtgdraftfish.settings') || '{}').theme || 'auto';
+        var dark = m === 'dark' || (m === 'auto' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="%BASE_URL%halftone/tokens.css" />
+    <link rel="stylesheet" href="%BASE_URL%halftone/bundle.css" />
+    <script src="%BASE_URL%halftone/bundle.js"></script>
+    <script type="module" src="/src/app/main.ts"></script>
+  </head>
+  <body class="ht-page">
+    <div id="app" class="page"></div>
+  </body>
+</html>

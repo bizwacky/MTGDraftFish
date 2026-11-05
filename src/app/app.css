@@ -1,0 +1,102 @@
+/* MTGDraftFish layout. Colours, type and spacing come from Halftone's tokens.css; only layout lives here. */
+.page { max-width: 1120px; margin: 0 auto; }
+
+/* masthead */
+.mast { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-5); padding: var(--space-3) 0 var(--space-5); border-bottom: var(--rule-width) solid var(--rule); }
+.mast-words { min-width: 0; }
+.mast-name { display: inline-block; font-family: var(--font-display); font-size: 72px; line-height: 0.9; font-weight: 300; letter-spacing: -0.01em; color: var(--ink); text-decoration: none; }
+.mast-name:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.mast-tag { margin: var(--space-2) 0 0 3px; font-family: var(--font-serif); font-style: italic; font-size: 15px; line-height: 20px; color: var(--ink-3); max-width: 36em; }
+.mast-side { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-3); flex: 0 0 auto; }
+.mast-plate { width: 168px; height: 56px; }
+.mast-nav { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; justify-content: flex-end; font-family: var(--font-sans); }
+.mast-nav a { color: var(--ink); text-decoration: none; padding: 4px 8px; border-radius: var(--radius-1); }
+.mast-nav a[aria-current="page"] { background: var(--ink); color: var(--paper); }
+.mast-nav a:hover { text-decoration: underline; }
+.mast-nav .sep { color: var(--ink-3); }
+.theme-group { display: inline-flex; gap: 0; }
+.theme-group .ht-btn { border-radius: 0; margin-left: -1px; }
+.theme-group .ht-btn:first-child { border-radius: var(--radius-1) 0 0 var(--radius-1); margin-left: 0; }
+.theme-group .ht-btn:last-child { border-radius: 0 var(--radius-1) var(--radius-1) 0; }
+
+main { padding-bottom: var(--space-8); }
+.lede { max-width: 46em; }
+.page-kicker { margin: var(--space-6) 0 var(--space-2); text-transform: uppercase; color: var(--ink-3); }
+.page-title { margin: 0; color: var(--ink); text-wrap: balance; }
+.page-dek { margin: var(--space-3) 0 0; color: var(--ink-2); }
+.status { margin: var(--space-5) 0; color: var(--ink-2); }
+.error { color: var(--bad-ink); }
+
+/* controls */
+.panel { margin-top: var(--space-5); padding: var(--space-3) var(--space-4) var(--space-4); border: var(--hairline) solid var(--axis); display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); align-items: flex-start; font-family: var(--font-sans); }
+.panel-title { flex-basis: 100%; margin: 0 0 var(--space-1); text-transform: uppercase; color: var(--ink-3); }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field-label { color: var(--ink-2); }
+.field-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; color: var(--ink); }
+.tiers { display: flex; flex-direction: column; gap: var(--space-2); }
+.panel-actions { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+input, select, button { font-family: var(--font-sans); font-size: 14px; line-height: 20px; }
+input[type="number"], input[type="text"], input[type="search"], select { color: var(--ink); background: var(--paper-raised); border: var(--hairline) solid var(--axis); border-radius: var(--radius-1); padding: 4px 8px; min-height: 32px; }
+input:focus-visible, select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+input[type="number"] { font-variant-numeric: tabular-nums; text-align: right; }
+.in-money { width: 7.5em; }
+.in-pct { width: 4.5em; }
+.in-wide { width: 100%; max-width: 28em; }
+.hint { color: var(--ink-3); }
+.muted { color: var(--ink-2); }
+.ht-btn--small { min-height: 24px; padding: 0 var(--space-2); }
+
+/* On the Signal plate the bundle remaps --ink to the pale on-signal colour, which leaves the butter
+   How-to-read panel unreadable in the Paper theme; keep the panel on-plate instead. */
+.ht-figure--signal .ht-howto { background: var(--signal-line); color: var(--on-signal); }
+.ht-figure--signal .ht-howto-k { color: var(--on-signal-2); }
+/* The top-cards table is the figure; let it run its full height instead of scrolling in a 420px box. */
+.fig-cards .ht-table-wrap { max-height: none; }
+
+/* sections */
+.kpis { margin-top: var(--space-6); }
+.fig { margin-top: var(--space-7); }
+.fig .ht-figure { margin: 0; }
+.section { margin-top: var(--space-7); }
+.section-title { margin: 0 0 var(--space-2); color: var(--ink); }
+.prose { max-width: 46em; }
+.prose h2 { margin: var(--space-7) 0 var(--space-2); }
+.prose h3 { margin: var(--space-5) 0 var(--space-2); }
+.prose p, .prose li { color: var(--ink); }
+.prose ul, .prose ol { padding-left: 1.4em; }
+.prose li + li { margin-top: var(--space-1); }
+.prose code, .mono { font-family: var(--font-mono); font-size: 0.85em; }
+.prose pre { padding: var(--space-3) var(--space-4); background: var(--paper-raised); border: var(--hairline) solid var(--grid); overflow: auto; }
+.prose a { color: inherit; }
+.notes-list { margin: 0; padding-left: 1.2em; color: var(--ink-2); }
+.notes-list li + li { margin-top: var(--space-1); }
+
+/* target table */
+.tbl-wrap { overflow: auto; margin-top: var(--space-4); }
+.tbl-wrap .ht-table { min-width: 880px; }
+.ht-table a { color: inherit; }
+.ht-table .cell-box { white-space: nowrap; }
+.ht-table .cell-box small { display: block; color: var(--ink-3); font-weight: 400; }
+.ht-table td.price { white-space: nowrap; }
+.ht-table .price .hint { display: block; margin-top: 2px; }
+.ht-table td.num, .ht-table th.num { text-align: right; white-space: nowrap; }
+.tone-good { color: var(--good-ink); }
+.tone-bad { color: var(--bad-ink); }
+
+/* picker */
+.picker-results { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-2); }
+.picker-results li { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); align-items: baseline; padding: var(--space-2) 0; border-bottom: var(--hairline) solid var(--grid); font-family: var(--font-sans); }
+.picker-results .code { color: var(--ink-3); }
+.picker-results .boxes { display: flex; gap: var(--space-1); flex-wrap: wrap; }
+.snippet { margin-top: var(--space-4); }
+
+@media (max-width: 720px) {
+  .mast { flex-direction: column; align-items: flex-start; }
+  .mast-side { align-items: flex-start; }
+  .mast-plate { display: none; }
+  .mast-name { font-size: 52px; }
+  .panel { gap: var(--space-3) var(--space-4); }
+}
+@media print {
+  .panel, .mast-nav, .picker { display: none !important; }
+}

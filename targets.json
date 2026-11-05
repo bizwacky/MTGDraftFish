@@ -1,0 +1,17 @@
+{
+  "defaults": {
+    "basis": "mid",
+    "tiers": [{ "min": 1, "pct": 0.7 }],
+    "boxes": 20000
+  },
+  "targets": [
+    { "set": "INV", "box": "draft", "note": "Invasion: the multicolor block that set the template for modern draft." },
+    { "set": "RAV", "box": "draft", "note": "Ravnica: City of Guilds. Guild drafting, bounce lands, Glare of Subdual." },
+    { "set": "TSP", "box": "draft", "note": "Time Spiral: timeshifted sheet, suspend, slivers. Dense and skill-testing." },
+    { "set": "ROE", "box": "draft", "note": "Rise of the Eldrazi: the slow, battlecruiser format drafters still rank first." },
+    { "set": "ISD", "box": "draft", "note": "Innistrad: flashback, double-faced cards, Spider Spawning." },
+    { "set": "KTK", "box": "draft", "note": "Khans of Tarkir: wedges, morph, fetch lands in the rare slot." },
+    { "set": "MM3", "box": "draft", "note": "Modern Masters 2017: the Ravnica-flavored cube-in-a-box, 24 packs." },
+    { "set": "DOM", "box": "draft", "note": "Dominaria: the modern-era favorite, historic and sagas." }
+  ]
+}
